@@ -9,12 +9,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 
     <title>belky</title>
-      </head>
-      <body>
+    <style>
+      .scrolling-wrapper{
+        overflow-x: auto;
+      }
+    </style>
+
+  </head>
+  <body>
 
       <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
         <div class="container-fluid">
-          <a class="navbar-brand" href="#">Belky</a>
+          <a class="navbar-brand" href="index.php">Belky</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -22,7 +28,7 @@
           <div class="collapse navbar-collapse" id="navbarsExampleDefault">
             <ul class="navbar-nav mr-auto mb-2 mb-md-0">
               <li class="nav-item active">
-                <a class="nav-link" aria-current="page" href="#">Мои последовательности</a>
+                <a class="nav-link" aria-current="page" href="index.php">Мои последовательности</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="#">База патентов</a>
@@ -32,15 +38,12 @@
         </div>
       </nav>
 
-      <main class="container">
-
         <div class="starter-template text-center py-5 px-1 mt-3">
           <h1>Добавить последовательность</h1>
         </div>
 
         <form method="get">
-          <div class="row justify-content-center">
-          <div class="col-sm-2 text-center">
+          <div class="scrolling-wrapper row flex-row flex-nowrap p-3 mb-4">
             <table class="table table-bordered border-primary">
               <tbody>
                 <?php
@@ -54,31 +57,59 @@
 
                   if(isset($_GET["cols"])){
                     $db->exec("UPDATE m_params SET mcol=".$_GET["cols"]." WHERE param_id=1;");
+                    $db->exec("INSERT INTO mcols (col, crow) VALUES (".($_GET["cols"]-1).", 1);");
                   }
 
                   if(isset($_GET["set_default"])){
                     $db->exec("UPDATE m_params SET mcol=30 WHERE param_id=1;");
+                    $db->exec("DELETE FROM mcols WHERE col>29;");
+                    for ($i = 0; $i < 30; $i++)
+                      $db->exec("UPDATE mcols SET crow=1 WHERE col=".$i.";");
                   }
 
                   $res = $db->querySingle("SELECT mcol FROM m_params;");
 
-                  
-                  for ($i = 0; $i < $res; $i++) {
-                      echo "<tr>";
-                      echo "<td>X".($i+1)."</td>";
-                      echo "<td><input type=\"text\" class=\"form-control input-sm\"></td>";
-                      echo "<td><button type=\"submit\" class=\"btn btn-outline-primary\">+</button></td>";
-                      echo "</tr>";
-                  }                
+                  if(isset($_GET["acol"])){
+                    $db->exec("UPDATE mcols SET crow = crow + 1 WHERE col=".$_GET["acol"].";");
+                  }
+
                   echo "<tr>";
-                  echo "<td></td>";
-                  echo "<td class=\"text-center\"><a href=\"?cols=".($res+1)."\" class=\"btn btn-outline-primary\">+</a></td>";
-                  echo "<td></td></tr>";
+                  for ($i = 0; $i < $res; $i++) {
+                      echo "<td>X".($i+1)."</td>";
+                  }
+                  echo "</tr>";
+
+                  echo "<tr>";
+                  for ($i = 0; $i < $res; $i++) {
+                      echo "<td><input type=\"text\" class=\"form-control input-sm\"></td>";
+                  }
+                  echo "<td class=\"text-center\"><a href=\"?cols=".($res+1)."\" class=\"btn btn-outline-primary\">+</a></td>";                  
+                  echo "</tr>";
+
+                  for($nrow=1; $nrow < $db->querySingle("SELECT MAX(crow) as max FROM mcols"); $nrow++){
+                    echo "<tr>";
+                    for ($i = 0; $i < $res; $i++) {
+                      if($db->querySingle("SELECT crow FROM mcols WHERE col=".$i.";") > $nrow)
+                        echo "<td><input type=\"text\" class=\"form-control input-sm\"></td>";
+                      else
+                        echo "<td></td>";
+                    }
+                    echo "</tr>";
+                  }
+
+                  echo "<tr>";
+                  for ($i = 0; $i < $res; $i++) {
+                      echo "<td><a href=\"?acol=".$i."\" class=\"btn btn-outline-primary\">+</a></td>";
+                  }                  
+                  echo "</tr>";
                 ?>            
               </tbody>
             </table>
           </div>
-          </div>
+
+
+      <main class="container">
+          
           <a href="?set_default=1" class="btn btn-outline-warning">Сбросить настройки формы</a>
           <button type="submit" class="btn btn-outline-primary">Добавить последовательность</button>
         </form>
