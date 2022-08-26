@@ -183,7 +183,20 @@
               while ($rowx = $posledsx->fetchArray()) {
                 echo "<tr>";
                 echo "<th scope=\"row\" class=\"text-center\">{$nomx}</th>";
-                echo "<td>{$rowx['posled']}</td>";
+                $posleds_pat = $db->query("SELECT posled FROM m_posled_pat");
+                $perc = 0.0;
+                while ($row_pat = $posleds_pat->fetchArray()) {
+                  $lperc = 0.0;
+                  similar_text($rowx['posled'], $row_pat['posled'], $lperc);
+                  if($lperc > $perc) $perc = $lperc;
+                }
+                if ($perc > 70)
+                  echo "<td class=\"table-danger\"><i>({$perc})</i>  {$rowx['posled']} </td>";
+                elseif ($perc > 30 && $perc < 70)
+                  echo "<td class=\"table-warning\"><i>({$perc})</i>  {$rowx['posled']} </td>";
+                else
+                  echo "<td class=\"table-success\"><i>({$perc})</i>  {$rowx['posled']}</td>";
+
                 echo "</tr>";
                 $nomx++;
               }
