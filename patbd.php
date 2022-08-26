@@ -8,7 +8,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 
-    <title>belky</title>
+    <title>patbd</title>
     <style>
       .scrolling-wrapper{
         overflow-x: auto;
@@ -39,7 +39,7 @@
       </nav>
 
         <div class="starter-template text-center py-5 px-1 mt-3">
-          <h1>Добавить последовательность</h1>
+          <h1>Добавить последовательность в базу патентов</h1>
         </div>
 
         <form method="post">
@@ -47,9 +47,8 @@
             <table class="table table-bordered border-primary">
               <tbody>
                 <?php
-                  include_once 'comb.php';
-                  // CREATE TABLE m_params ( param_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, mcol INTEGER NOT NULL);
-                  // INSERT INTO m_params ( mcol ) VALUES ( 30 );
+                  // CREATE TABLE m_params_pat ( param_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, mcol INTEGER NOT NULL);
+                  // INSERT INTO m_params_pat ( mcol ) VALUES ( 30 );
                   ini_set('display_errors', 1);
                   ini_set('display_startup_errors', 1);
                   error_reporting(E_ALL);
@@ -57,71 +56,43 @@
 
                   function set_def($mdb)
                   {
-                    $mdb->exec("UPDATE m_params SET mcol=30 WHERE param_id=1;");
-                    $mdb->exec("DELETE FROM mcols WHERE col>29;");
-                    for ($i = 0; $i < 30; $i++)
-                      $mdb->exec("UPDATE mcols SET crow=1 WHERE col=".$i.";");
-                  }                  
+                    $mdb->exec("UPDATE m_params_pat SET mcol=30 WHERE param_id=1;");
+                  }
 
                   // OBR GETS
                   if(isset($_GET["cols"])){
                     if((int)$_GET["cols"] < 0)
                     {
                       $c = abs((int)$_GET["cols"]) - 2;
-                      $db->exec("UPDATE m_params SET mcol=".$c." WHERE param_id=1;");
-                      $db->exec("DELETE FROM mcols WHERE col =".$c);
+                      $db->exec("UPDATE m_params_pat SET mcol=".$c." WHERE param_id=1;");
                     }
                     else
                     {
-                      $db->exec("UPDATE m_params SET mcol=".$_GET["cols"]." WHERE param_id=1;");
-                      $db->exec("INSERT INTO mcols (col, crow) VALUES (".($_GET["cols"]-1).", 1);");
+                      $db->exec("UPDATE m_params_pat SET mcol=".$_GET["cols"]." WHERE param_id=1;");
                     }
                   }
                   if(isset($_GET["set_default"]))
-                    set_def($db);                  
-                  if(isset($_GET["acol"]))
-                    $db->exec("UPDATE mcols SET crow = crow + 1 WHERE col=".$_GET["acol"].";");
+                    set_def($db);
                   if(isset($_GET["del_pos"])){
-                    $db->exec("DELETE FROM m_posled_0 WHERE posled_id=".$_GET["del_pos"].";");
-                    $db->exec("DELETE FROM m_posled_x WHERE nposled0=".$_GET["del_pos"].";");
+                    $db->exec("DELETE FROM m_posled_pat WHERE posled_id=".$_GET["del_pos"].";");
                   }
 
                   // ADD POSLED
-                  $res = $db->querySingle("SELECT mcol FROM m_params;");
                   $fadd = 0;
+                  $res = $db->querySingle("SELECT mcol FROM m_params_pat;");
                   if(isset($_POST["0X0"]))
-                  { 
+                  {
                     $str_posled = "";
                     for($i=0; $i < $res; $i++)
                       if(isset($_POST["0X".$i]))
                         $str_posled .= $_POST["0X".$i];
-                    $db->exec("INSERT INTO m_posled_0 (posled) VALUES (\"".$str_posled."\")");
-                    $vect_p = [];
-                    $max_row = $db->querySingle("SELECT MAX(crow) as max FROM mcols");
-                    for($i=0; $i < $res; $i++){
-                      $vect = [];
-                      if(isset($_POST["0X".$i]))
-                        $vect[] = $_POST["0X".$i];
-                      for($nrow = 1; $nrow < $max_row; $nrow++){
-                        if(isset($_POST[$nrow."X".$i]))
-                          $vect[] = $_POST[$nrow."X".$i];
-                      }
-                      $vect_p[] = $vect;
-                    }
-                    $comb = Combinations($vect_p);
-                    foreach ($comb as $vcomb)
-                    {
-                      $str_val = "";
-                      foreach ($vcomb as $val)
-                        $str_val .= $val;
-                      $db->exec("INSERT INTO m_posled_x (nposled0, posled) VALUES (".$db->querySingle("SELECT MAX(posled_id) FROM m_posled_0").",\"".$str_val."\")");
-                    }
-                    set_def($db);
+                    $db->exec("INSERT INTO m_posled_pat (posled) VALUES (\"".$str_posled."\")");
                     $fadd = 1;
+                    set_def($db);
                   }
 
                   // GEN FORM ADD POSLED
-                  $res = $db->querySingle("SELECT mcol FROM m_params;");
+                  $res = $db->querySingle("SELECT mcol FROM m_params_pat;");
                   echo "<tr><td></td>";
                   for ($i = 0; $i < $res; $i++)
                       echo "<td class=\"text-center\">X".($i+1)."</td>";
@@ -130,20 +101,6 @@
                   for ($i = 0; $i < $res; $i++)
                       echo "<td><input type=\"text\" name=\"0X".$i."\" class=\"form-control input-sm\" required></td>";
                   echo "<td><a href=\"?cols=".($res+1)."\" class=\"btn btn-outline-primary\">+</a></td></tr>";
-                  for($nrow=1; $nrow < $db->querySingle("SELECT MAX(crow) as max FROM mcols"); $nrow++){
-                    echo "<tr><td></td>";
-                    for ($i = 0; $i < $res; $i++) {
-                      if($db->querySingle("SELECT crow FROM mcols WHERE col=".$i.";") > $nrow)
-                        echo "<td><input type=\"text\" name=\"".$nrow."X".$i."\" class=\"form-control input-sm\" required></td>";
-                      else
-                        echo "<td></td>";
-                    }
-                    echo "<td></td></tr>";
-                  }
-                  echo "<tr><td></td>";
-                  for ($i = 0; $i < $res; $i++)
-                      echo "<td><a href=\"?acol=".$i."\" class=\"btn btn-outline-primary\">+</a></td>";
-                  echo "<td></td></tr>";
                 ?>            
               </tbody>
             </table>
@@ -166,31 +123,28 @@
         ?>
 
         <div class="starter-template text-center py-3 px-2">
-          <h1>Моих последовательности</h1>
+          <h1>Запатентованные последовательности</h1>
         </div>
         <?php
-          $posleds = $db->query("SELECT * FROM m_posled_0;");
-          $nom0 = 1;
+          $posleds = $db->query("SELECT * FROM m_posled_pat;");
+          echo "<table class=\"table table-bordered border-primary\">";
+          echo "<thead><tr>";
+          echo "<th scope=\"col\" style=\"width:5%\"></th>";
+          echo "<th scope=\"col\" style=\"width:5%\">№</th>";
+          echo "<th scope=\"col\"> Последовательность </th> </tr>";
+          echo "</thead>";
+          echo "<tbody>";
+          $nom = 1;
           while ($row = $posleds->fetchArray()) {
-              echo "<table class=\"table table-bordered border-primary\">";
-              echo "<thead><tr>";              
-              echo "<th scope=\"col\" style=\"width:5%\"><a href=\"?del_pos={$row['posled_id']}\" class=\"btn btn-outline-danger\">Удалить</a></th>";
-              echo "<th scope=\"col\">{$nom0}. {$row['posled']}</th> </tr>";
-              echo "</thead>";
-              echo "<tbody>";
-              $posledsx = $db->query("SELECT * FROM m_posled_x WHERE nposled0 = {$row['posled_id']};");
-              $nomx = 1;
-              while ($rowx = $posledsx->fetchArray()) {
-                echo "<tr>";
-                echo "<th scope=\"row\" class=\"text-center\">{$nomx}</th>";
-                echo "<td>{$rowx['posled']}</td>";
-                echo "</tr>";
-                $nomx++;
-              }
-              echo "</tbody>";
-              echo "</table>";
-              $nom0++;
+            echo "<tr>";
+            echo "<th scope=\"row\" class=\"text-center\"><a href=\"?del_pos={$row['posled_id']}\" class=\"btn btn-outline-danger\">х</a></th>";
+            echo "<th scope=\"row\" class=\"text-center\">{$nom}</th>";
+            echo "<td>{$row['posled']}</td>";
+            echo "</tr>";
+            $nom++;
           }
+          echo "</tbody>";
+          echo "</table>";
 
           $db->close();
           unset($db);
