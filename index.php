@@ -57,9 +57,9 @@
                   function set_def($mdb)
                   {
                     $mdb->exec("UPDATE m_params SET mcol=30 WHERE param_id=1;");
-                    $mdb->exec("DELETE FROM mcols WHERE col>29;");
+                    $mdb->exec("DELETE FROM mcols;");
                     for ($i = 0; $i < 30; $i++)
-                      $mdb->exec("UPDATE mcols SET crow=1 WHERE col=".$i.";");
+                      $mdb->exec("INSERT INTO mcols (col, crow) VALUES (".$i.", 1);");
                   }                  
 
                   // OBR GETS
