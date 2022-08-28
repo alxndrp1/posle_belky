@@ -41,7 +41,6 @@
         <div class="starter-template text-center py-5 px-1 mt-3">
           <h1>Добавить последовательность</h1>
         </div>
-
         <form method="post">
           <div class="scrolling-wrapper row flex-row flex-nowrap p-3 mb-4">
             <table class="table table-bordered border-primary">
@@ -114,7 +113,10 @@
                       $str_val = "";
                       foreach ($vcomb as $val)
                         $str_val .= $val;
-                      $db->exec("INSERT INTO m_posled_x (nposled0, posled) VALUES (".$db->querySingle("SELECT MAX(posled_id) FROM m_posled_0").",\"".$str_val."\")");
+                      if (substr_count($str_val, 'K*') > 1)
+                        continue;
+                      else
+                        $db->exec("INSERT INTO m_posled_x (nposled0, posled) VALUES (".$db->querySingle("SELECT MAX(posled_id) FROM m_posled_0").",\"".$str_val."\")");
                     }
                     set_def($db);
                     $fadd = 1;
@@ -153,6 +155,32 @@
       <main class="container">
           <a href="?set_default=1" class="btn btn-outline-warning">Сбросить настройки формы</a>
           <button type="submit" class="btn btn-outline-primary">Добавить последовательность</button>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Info
+          </button>
+
+          <!-- Modal -->
+          <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Info</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p>1. Порядок добавления последовательности:</p>
+                  <p>1.1 настроить кол-во элементов последовательности используя кнопки "+/-";</p>
+                  <p>1.2 настроить кол-во уровней используя кнопки "+" под соответствующими элементами;</p>
+                  <p>1.3 заполнить форму элементами и нажать кнопку "Добавить последовательность";</p>
+                  <p>2. Комбинации с несколькими элементами <b>"K*"</b> игнорируются и не создаются.</p>
+                  <p>3. Чтобы создать комбинирующийся участок, необходимо уменьшить кол-во ячеек для элементов на величену элементов участка и записать элементы участка в одну ячейку слитно.</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
 
         <?php
