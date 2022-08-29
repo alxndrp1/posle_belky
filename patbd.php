@@ -41,22 +41,49 @@
         <div class="starter-template text-center py-5 px-1 mt-3">
           <h1>Добавить последовательность в базу патентов</h1>
         </div>
+        <div class="btn-group row d-flex justify-content-center flex-nowrap mt-1" role="group" aria-label="...">
+            <?php
+              include_once 'comb.php';
+              // CREATE TABLE m_params_pat ( param_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, mcol INTEGER NOT NULL);
+              // INSERT INTO m_params_pat ( mcol ) VALUES ( 30 );
+              ini_set('display_errors', 1);
+              ini_set('display_startup_errors', 1);
+              error_reporting(E_ALL);
+              $db = new SQLite3("my.db", SQLITE3_OPEN_READWRITE);              
+
+              if(isset($_GET["reg"]))
+                  $db->exec("UPDATE m_params_pat SET reg=".$_GET["reg"]." WHERE param_id=1;");
+
+              $reg = $db->querySingle("SELECT reg FROM m_params_pat;");
+
+              if($reg)
+              {
+                echo "<button type=\"button\" onclick=\"location.href='?reg=0';\" class=\"btn btn-outline-primary\">Ввести последовательность полностью</button>";
+                echo "<button type=\"button\" onclick=\"location.href='?reg=1';\" class=\"btn btn-primary\" disabled>Комбинировать</button>";                
+              }
+              else
+              {
+                echo "<button type=\"button\" onclick=\"location.href='?reg=0';\" class=\"btn btn-primary\" disabled>Ввести последовательность полностью</button>";
+                echo "<button type=\"button\" onclick=\"location.href='?reg=1';\" class=\"btn btn-outline-primary\">Комбинировать</button>";
+              }
+
+            ?>
+        </div>
+
+          
 
         <form method="post">
           <div class="scrolling-wrapper row flex-row flex-nowrap p-3 mb-4">
-            <table class="table table-bordered border-primary">
+            <table class="table-bordered border-primary">
               <tbody>
                 <?php
-                  // CREATE TABLE m_params_pat ( param_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, mcol INTEGER NOT NULL);
-                  // INSERT INTO m_params_pat ( mcol ) VALUES ( 30 );
-                  ini_set('display_errors', 1);
-                  ini_set('display_startup_errors', 1);
-                  error_reporting(E_ALL);
-                  $db = new SQLite3("my.db", SQLITE3_OPEN_READWRITE);
 
                   function set_def($mdb)
                   {
                     $mdb->exec("UPDATE m_params_pat SET mcol=30 WHERE param_id=1;");
+                    $mdb->exec("DELETE FROM mcols_pat;");
+                    for ($i = 0; $i < 30; $i++)
+                      $mdb->exec("INSERT INTO mcols_pat (col, crow) VALUES (".$i.", 1);");
                   }
 
                   // OBR GETS
@@ -76,23 +103,58 @@
                   if(isset($_GET["del_pos"])){
                     $db->exec("DELETE FROM m_posled_pat WHERE posled_id=".$_GET["del_pos"].";");
                   }
+                  if(isset($_GET["acol"]))
+                    $db->exec("UPDATE mcols_pat SET crow = crow + 1 WHERE col=".$_GET["acol"].";");
 
                   // ADD POSLED
                   $fadd = 0;
-                  $res = $db->querySingle("SELECT mcol FROM m_params_pat;");
-                  if(isset($_POST["0X0"]))
+                  if($reg)
                   {
-                    $str_posled = "";
-                    for($i=0; $i < $res; $i++)
-                      if(isset($_POST["0X".$i]))
-                        $str_posled .= $_POST["0X".$i];
-                    $db->exec("INSERT INTO m_posled_pat (posled) VALUES (\"".$str_posled."\")");
-                    $fadd = 1;
-                    set_def($db);
+                    $res = $db->querySingle("SELECT mcol FROM m_params_pat;");
+                    if(isset($_POST["0X0"]))
+                    { 
+                      $str_posled = "";
+                      $vect_p = [];
+                      $max_row = $db->querySingle("SELECT MAX(crow) as max FROM mcols_pat");
+                      for($i=0; $i < $res; $i++){
+                        $vect = [];
+                        if(isset($_POST["0X".$i]))
+                          $vect[] = $_POST["0X".$i];
+                        for($nrow = 1; $nrow < $max_row; $nrow++){
+                          if(isset($_POST[$nrow."X".$i]))
+                            $vect[] = $_POST[$nrow."X".$i];
+                        }
+                        $vect_p[] = $vect;
+                      }
+                      $comb = Combinations($vect_p);
+                      foreach ($comb as $vcomb)
+                      {
+                        $str_val = "";
+                        foreach ($vcomb as $val)
+                          $str_val .= $val;
+                        if (substr_count($str_val, 'K*') > 1)
+                          continue;
+                        else
+                          $db->exec("INSERT INTO m_posled_pat (posled) VALUES (\"".$str_val."\")");
+                      }
+                      set_def($db);
+                      $fadd = 1;
+                    }
+                  }
+                  else
+                  {
+                    if(isset($_POST["0X0"]))
+                    {
+                      $db->exec("INSERT INTO m_posled_pat (posled) VALUES (\"".$_POST["0X0"]."\")");
+                      $fadd = 1;
+                      set_def($db);
+                    }
                   }
 
                   // GEN FORM ADD POSLED
-                  $res = $db->querySingle("SELECT mcol FROM m_params_pat;");
+                  if($reg)
+                  {
+                    $res = $db->querySingle("SELECT mcol FROM m_params_pat;");
                   echo "<tr><td></td>";
                   for ($i = 0; $i < $res; $i++)
                       echo "<td class=\"text-center\">X".($i+1)."</td>";
@@ -101,6 +163,23 @@
                   for ($i = 0; $i < $res; $i++)
                       echo "<td><input type=\"text\" name=\"0X".$i."\" class=\"form-control input-sm\" required></td>";
                   echo "<td><a href=\"?cols=".($res+1)."\" class=\"btn btn-outline-primary\">+</a></td></tr>";
+                  for($nrow=1; $nrow < $db->querySingle("SELECT MAX(crow) as max FROM mcols_pat"); $nrow++){
+                    echo "<tr><td></td>";
+                    for ($i = 0; $i < $res; $i++) {
+                      if($db->querySingle("SELECT crow FROM mcols_pat WHERE col=".$i.";") > $nrow)
+                        echo "<td><input type=\"text\" name=\"".$nrow."X".$i."\" class=\"form-control input-sm\" required></td>";
+                      else
+                        echo "<td></td>";
+                    }
+                    echo "<td></td></tr>";
+                  }
+                  echo "<tr><td></td>";
+                  for ($i = 0; $i < $res; $i++)
+                      echo "<td class=\"text-center\"><a href=\"?acol=".$i."\" class=\"btn btn-outline-primary\">+</a></td>";
+                  echo "<td></td></tr>";
+                  }
+                  else
+                    echo "<tr><td><input type=\"text\" name=\"0X0\" class=\"form-control input-sm\" required></td></tr>";
                 ?>            
               </tbody>
             </table>
@@ -125,9 +204,10 @@
         <div class="starter-template text-center py-3 px-2">
           <h1>Запатентованные последовательности</h1>
         </div>
+        <div class="row justify-content-center">
         <?php
           $posleds = $db->query("SELECT * FROM m_posled_pat;");
-          echo "<table class=\"table table-bordered border-primary\">";
+          echo "<table class=\"table-bordered border-primary\">";
           echo "<thead><tr>";
           echo "<th scope=\"col\" style=\"width:5%\"></th>";
           echo "<th scope=\"col\" style=\"width:5%\">№</th>";
@@ -149,7 +229,7 @@
           $db->close();
           unset($db);
         ?>
-
+        </div>
       </main><!-- /.container --><script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.bundle.min.js"></script>
       <script>
         window.dataLayer = window.dataLayer || [];

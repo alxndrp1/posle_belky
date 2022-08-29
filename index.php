@@ -43,7 +43,7 @@
         </div>
         <form method="post">
           <div class="scrolling-wrapper row flex-row flex-nowrap p-3 mb-4">
-            <table class="table table-bordered border-primary">
+            <table class="table-bordered border-primary">
               <tbody>
                 <?php
                   include_once 'comb.php';
@@ -145,7 +145,7 @@
                   }
                   echo "<tr><td></td>";
                   for ($i = 0; $i < $res; $i++)
-                      echo "<td><a href=\"?acol=".$i."\" class=\"btn btn-outline-primary\">+</a></td>";
+                      echo "<td class=\"text-center\"><a href=\"?acol=".$i."\" class=\"btn btn-outline-primary\">+</a></td>";
                   echo "<td></td></tr>";
                 ?>            
               </tbody>
@@ -201,7 +201,7 @@
           $posleds = $db->query("SELECT * FROM m_posled_0;");
           $nom0 = 1;
           while ($row = $posleds->fetchArray()) {
-              echo "<table class=\"table table-bordered border-primary\">";
+              echo "<table class=\"table-bordered border-primary\">";
               echo "<thead><tr>";              
               echo "<th scope=\"col\" style=\"width:5%\"><a href=\"?del_pos={$row['posled_id']}\" class=\"btn btn-outline-danger\">Удалить</a></th>";
               echo "<th scope=\"col\">{$nom0}. {$row['posled']}</th> </tr>";
