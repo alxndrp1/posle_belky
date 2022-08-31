@@ -35,9 +35,39 @@
               </li>
             </ul>
           </div>
+          <div class="pull-right">
+            <ul class="nav navbar-nav">
+                <li><form method="post"><input type="hidden" name="logout" value="1"><button type="submit" class="btn navbar-btn btn-danger" name="logout" id="logout"  value="Log Out">Выход</button></form></li>
+            </ul>
+          </div>
         </div>
       </nav>
 
+      <?php
+        session_start();
+        
+        if(isset($_POST["logout"]))
+          $_SESSION['auth'] = null;
+
+        if (!empty($_POST['pass'])) {
+          
+          if ($_POST['pass'] == "popilich") {
+            $_SESSION['auth'] = true;
+          } else {
+            echo "<div class=\"alert alert-danger text-center py-5 px-1 mt-3\" role=\"alert\">Не верный пароль пароль администратора</div>";
+          }
+        }
+      ?>
+      <?php 
+        if (empty($_SESSION['auth']))
+        {
+          echo "<form method=\"post\" class=\"text-center py-5 px-1 mt-3\"> <div class=\"mb-3\">";
+          echo "<label for=\"exampleInputPassword1\" class=\"form-label\">Пароль администратора</label>";
+          echo "<input type=\"password\" class=\"form-control\" id=\"exampleInputPassword1\" name=\"pass\"></div>";
+          echo "<button type=\"submit\" class=\"btn btn-primary\">Войти</button> </form>";
+        }
+      ?> 
+<?php if (!empty($_SESSION['auth'])): ?>
         <div class="starter-template text-center py-5 px-1 mt-3">
           <h1>Добавить последовательность</h1>
         </div>
@@ -45,7 +75,9 @@
           <div class="scrolling-wrapper row flex-row flex-nowrap p-3 mb-4">
             <table class="table-bordered border-primary">
               <tbody>
+<?php endif; ?>
                 <?php
+                  if (empty($_SESSION['auth'])) exit();
                   include_once 'comb.php';
                   // CREATE TABLE m_params ( param_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, mcol INTEGER NOT NULL);
                   // INSERT INTO m_params ( mcol ) VALUES ( 30 );
@@ -201,7 +233,7 @@
           $posleds = $db->query("SELECT * FROM m_posled_0;");
           $nom0 = 1;
           while ($row = $posleds->fetchArray()) {
-              echo "<table class=\"table-bordered border-primary\">";
+              echo "<table class=\"table table-bordered border-primary\">";
               echo "<thead><tr>";              
               echo "<th scope=\"col\" style=\"width:5%\"><a href=\"?del_pos={$row['posled_id']}\" class=\"btn btn-outline-danger\">Удалить</a></th>";
               echo "<th scope=\"col\">{$nom0}. {$row['posled']}</th> </tr>";

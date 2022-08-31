@@ -35,14 +35,46 @@
               </li>
             </ul>
           </div>
+          <div class="pull-right">
+            <ul class="nav navbar-nav">
+                <li><form method="post"><input type="hidden" name="logout" value="1"><button type="submit" class="btn navbar-btn btn-danger" name="logout" id="logout"  value="Log Out">Выход</button></form></li>
+            </ul>
+          </div>
         </div>
       </nav>
 
+      <?php
+        session_start();
+        
+        if(isset($_POST["logout"]))
+          $_SESSION['auth'] = null;
+
+        if (!empty($_POST['pass'])) {
+          
+          if ($_POST['pass'] == "popilich") {
+            $_SESSION['auth'] = true;
+          } else {
+            echo "<div class=\"alert alert-danger text-center py-5 px-1 mt-3\" role=\"alert\">Не верный пароль пароль администратора</div>";
+          }
+        }
+      ?>
+      <?php 
+        if (empty($_SESSION['auth']))
+        {
+          echo "<form method=\"post\" class=\"text-center py-5 px-1 mt-3\"> <div class=\"mb-3\">";
+          echo "<label for=\"exampleInputPassword1\" class=\"form-label\">Пароль администратора</label>";
+          echo "<input type=\"password\" class=\"form-control\" id=\"exampleInputPassword1\" name=\"pass\"></div>";
+          echo "<button type=\"submit\" class=\"btn btn-primary\">Войти</button> </form>";
+        }
+      ?> 
+<?php if (!empty($_SESSION['auth'])): ?>
         <div class="starter-template text-center py-5 px-1 mt-3">
           <h1>Добавить последовательность в базу патентов</h1>
         </div>
         <div class="btn-group row d-flex justify-content-center flex-nowrap mt-1" role="group" aria-label="...">
+<?php endif; ?>
             <?php
+              if (empty($_SESSION['auth'])) exit();
               include_once 'comb.php';
               // CREATE TABLE m_params_pat ( param_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, mcol INTEGER NOT NULL);
               // INSERT INTO m_params_pat ( mcol ) VALUES ( 30 );
@@ -70,8 +102,6 @@
             ?>
         </div>
 
-          
-
         <form method="post">
           <div class="scrolling-wrapper row flex-row flex-nowrap p-3 mb-4">
             <table class="table-bordered border-primary">
@@ -92,10 +122,12 @@
                     {
                       $c = abs((int)$_GET["cols"]) - 2;
                       $db->exec("UPDATE m_params_pat SET mcol=".$c." WHERE param_id=1;");
+                      $db->exec("DELETE FROM mcols_pat WHERE col =".$c);
                     }
                     else
                     {
                       $db->exec("UPDATE m_params_pat SET mcol=".$_GET["cols"]." WHERE param_id=1;");
+                      $db->exec("INSERT INTO mcols_pat (col, crow) VALUES (".($_GET["cols"]-1).", 1);");
                     }
                   }
                   if(isset($_GET["set_default"]))
@@ -143,9 +175,9 @@
                   }
                   else
                   {
-                    if(isset($_POST["0X0"]))
+                    if(isset($_POST["X"]))
                     {
-                      $db->exec("INSERT INTO m_posled_pat (posled) VALUES (\"".$_POST["0X0"]."\")");
+                      $db->exec("INSERT INTO m_posled_pat (posled) VALUES (\"".$_POST["X"]."\")");
                       $fadd = 1;
                       set_def($db);
                     }
@@ -179,7 +211,7 @@
                   echo "<td></td></tr>";
                   }
                   else
-                    echo "<tr><td><input type=\"text\" name=\"0X0\" class=\"form-control input-sm\" required></td></tr>";
+                    echo "<tr><td><input type=\"text\" name=\"X\" class=\"form-control input-sm\" required></td></tr>";
                 ?>            
               </tbody>
             </table>
@@ -230,7 +262,8 @@
           unset($db);
         ?>
         </div>
-      </main><!-- /.container --><script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.bundle.min.js"></script>
+      </main>
+      <!-- /.container --><script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.bundle.min.js"></script>
       <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){ dataLayer.push(arguments); }
