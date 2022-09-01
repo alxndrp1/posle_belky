@@ -163,7 +163,13 @@
                       {
                         $str_val = "";
                         foreach ($vcomb as $val)
+                        {
+                          if (substr_count($val, 'Ø') > 0)
+                            break;
+                          if (substr_count($val, 'ø') > 0)
+                            break;
                           $str_val .= $val;
+                        }
                         if (substr_count($str_val, 'K*') > 1)
                           continue;
                         else
