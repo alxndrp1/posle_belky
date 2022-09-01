@@ -13,6 +13,10 @@
       .scrolling-wrapper{
         overflow-x: auto;
       }
+      input[type=text] {
+        border: 2px solid black;
+        border-radius: 4px;
+      }
     </style>
 
   </head>
@@ -112,6 +116,11 @@
                     set_def($db);                  
                   if(isset($_GET["acol"]))
                     $db->exec("UPDATE mcols SET crow = crow + 1 WHERE col=".$_GET["acol"].";");
+                  if(isset($_GET["dcol"]))
+                  {
+                    if($db->querySingle("SELECT crow FROM mcols WHERE col=".$_GET["dcol"].";") > 1)
+                      $db->exec("UPDATE mcols SET crow = crow - 1 WHERE col=".$_GET["dcol"].";");
+                  }
                   if(isset($_GET["del_pos"])){
                     $db->exec("DELETE FROM m_posled_0 WHERE posled_id=".$_GET["del_pos"].";");
                     $db->exec("DELETE FROM m_posled_x WHERE nposled0=".$_GET["del_pos"].";");
@@ -165,21 +174,25 @@
                   $res = $db->querySingle("SELECT mcol FROM m_params;");
                   echo "<tr><td></td>";
                   for ($i = 0; $i < $res; $i++)
+                      echo "<td class=\"text-center\"><a href=\"?dcol=".$i."\" class=\"btn btn-outline-primary\">-</a></td>";
+                  echo "<td></td></tr>";
+                  echo "<tr bgcolor=\"#cfe2ff\"><td bgcolor=\"white\"></td>";
+                  for ($i = 0; $i < $res; $i++)
                       echo "<td class=\"text-center\">X".($i+1)."</td>";
-                  echo "<td></td></tr><tr>";
-                  echo "<td><a href=\"?cols=-".($res+1)."\" class=\"btn btn-outline-primary\">-</a></td>";
+                  echo "<td bgcolor=\"white\"></td></tr><tr bgcolor=\"#cbccce\">";
+                  echo "<td bgcolor=\"white\"><a href=\"?cols=-".($res+1)."\" class=\"btn btn-outline-primary\">-</a></td>";
                   for ($i = 0; $i < $res; $i++)
                       echo "<td><input type=\"text\" name=\"0X".$i."\" class=\"form-control input-sm\" required></td>";
-                  echo "<td><a href=\"?cols=".($res+1)."\" class=\"btn btn-outline-primary\">+</a></td></tr>";
+                  echo "<td bgcolor=\"white\"><a href=\"?cols=".($res+1)."\" class=\"btn btn-outline-primary\">+</a></td></tr>";
                   for($nrow=1; $nrow < $db->querySingle("SELECT MAX(crow) as max FROM mcols"); $nrow++){
-                    echo "<tr><td></td>";
+                    echo "<tr bgcolor=\"#cbccce\"><td bgcolor=\"white\"></td>";
                     for ($i = 0; $i < $res; $i++) {
                       if($db->querySingle("SELECT crow FROM mcols WHERE col=".$i.";") > $nrow)
                         echo "<td><input type=\"text\" name=\"".$nrow."X".$i."\" class=\"form-control input-sm\" required></td>";
                       else
                         echo "<td></td>";
                     }
-                    echo "<td></td></tr>";
+                    echo "<td bgcolor=\"white\"></td></tr>";
                   }
                   echo "<tr><td></td>";
                   for ($i = 0; $i < $res; $i++)
